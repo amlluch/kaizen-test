@@ -10,7 +10,7 @@ So let's jump straight in!
 
 We want you to create the REST API and backend resources of a web application that will be used as an "internal blog". The objective of the platform is to let Kaizen employees share updates and add comments to those updates through a single-page web UI, as shown below:
 
-![Example](https://github.com/KaizenReporting/test-backend-software-engineer/blob/master/The%20Kaizen%20Blog.jpg?raw=true)
+![Example](The%20Kaizen%20Blog.jpg)
 
 Users don't have to be authenticated. Anyone within the organisation can access this webapp and post updates and comments. They just have to enter their name and the message they want to post. (And optionally an image for updates if they want to)
 
