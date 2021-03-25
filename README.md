@@ -1,3 +1,9 @@
+IAM Username: kaizen_user
+
+IAM Password: HocWDC1cfh3HMXc]3
+
+Login URL: https://608738265803.signin.aws.amazon.com/console
+
 # The Kaizen blog
 
 Hi there! And welcome to the technical test stage of the interview process for becoming a Kaizen Backend Software Engineer!
