@@ -246,10 +246,10 @@ components:
     Image:
       type: object
       required:
-        - key
+        - id
         - url
       properties:
-        key:
+        id:
           type: string
           format: uuid
           description: File name
