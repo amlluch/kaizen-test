@@ -20,4 +20,4 @@ def test_serialize(dummy_comment: Comment) -> None:
     # then
     assert isinstance(comment["id"], str)
     assert isinstance(comment["post_id"], str)
-    assert isinstance(comment["created_at"], float)
+    assert isinstance(comment["created_at"], int)
