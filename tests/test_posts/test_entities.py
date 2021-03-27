@@ -51,7 +51,7 @@ def test_serialize_with_image(dummy_post: Post) -> None:
     post = asdict(dummy_post, dict_factory=dict_factory)
 
     # then
-    assert isinstance(post["image"]["id"], str)  # type: ignore
+    assert isinstance(post["image"]["id"], str)
 
 
 def test_serialize_without_image(dummy_post: Post) -> None:
