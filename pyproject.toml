@@ -6,6 +6,11 @@ authors = ["Alfonso <amlluch@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+boto3 = "^1.17.39"
+kink = "^0.5.0"
+aws-lambda-context = "^1.1.0"
+marshmallow = "^3.10.0"
+marshmallow-dataclass = "^8.3.2"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
