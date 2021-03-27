@@ -1,0 +1,300 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Kaizen blog API
+
+paths:
+  /post:
+    get:
+      summary: Retrieves all posts
+      operationId: getPosts
+      responses:
+        '200':
+          description: Returns a list of posts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostList"
+    post:
+      summary: Create new post
+      operationId: createPost
+      requestBody:
+        description: Post to be created
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostResponse'
+      responses:
+        '200':
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostResponse"
+        422:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /post/{post_id}:
+    parameters:
+      - name: post_id
+        in: path
+        required: true
+        description: The id of the post
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Retrieves a post
+      operationId: getPost
+      responses:
+        '200':
+          description: Returns a post with existing fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostResponse"
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: 404
+                error: Post not found
+
+  /post/{post_id}/image:
+    parameters:
+      - name: post_id
+        in: path
+        required: true
+        description: The id of the post to upload the image
+        schema:
+          type: string
+          format: uuid
+    put:
+      summary: Uploads images to s3 and updates the database
+      operationId: updateImage
+      requestBody:
+        description: Image to be uploaded
+        required: true
+        content:
+          image/*:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Image succesfully uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostResponse"
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: 404
+                error: Post not found
+        '415':
+          description: Bad image file
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: 415
+                error: Bad image file
+
+  /post/{post_id}/like:
+    parameters:
+      - name: post_id
+        in: path
+        required: true
+        description: The id of the post to like
+        schema:
+          type: string
+          format: uuid
+    put:
+      summary: Increases like field by 1
+      operationId: increaseLike
+      responses:
+        '200':
+          description: Like successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostResponse"
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: 404
+                error: Post not found
+
+  /comment:
+    get:
+      summary: Retrieves all comments
+      operationId: getComments
+      responses:
+        '200':
+          description: Returns a list of comments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentList"
+    post:
+      summary: Create new comment
+      operationId: createComment
+      requestBody:
+        description: Comment to be created
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentResponse'
+      responses:
+        '200':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentResponse"
+        422:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /comment/{comment_id}:
+    parameters:
+      - name: comment_id
+        in: path
+        required: true
+        description: The id of the comment
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Retrieves a comment
+      operationId: getComment
+      responses:
+        '200':
+          description: Returns a comment with its fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentResponse"
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: 404
+                error: Comment not found
+
+components:
+  schemas:
+    PostResponse:
+      type: object
+      required:
+        - id
+        - text
+        - username
+        - image
+        - likes
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        text:
+          type: string
+        username:
+          type: string
+        image:
+          allOf:
+            - $ref: "#/components/schemas/Image"
+            - readOnly: true
+        likes:
+          type: number
+          format: int32
+          readOnly: true
+        created_at:
+          type: string
+          format: datetime
+          readOnly: true
+    PostList:
+      type: array
+      items:
+        $ref: "#/components/schemas/PostResponse"
+    Image:
+      type: object
+      required:
+        - key
+        - url
+      properties:
+        key:
+          type: string
+          format: uuid
+          description: File name
+          example: 2d4b0d04-a7f1-4a62-a7f1-a5fd4fa0b04d.jpeg
+        url:
+          type: string
+          format: url
+          example: https://kaizen-blog-api-develop.s3-eu-west-1.amazonaws.com/posts/2d4b0d04-a7f1-4a62-a7f1-a5fd4fa0b04d.jpeg
+    CommentResponse:
+      type: object
+      required:
+        - id
+        - text
+        - username
+        - post_id
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        text:
+          type: string
+        username:
+          type: string
+        post_id:
+          description: Identifier of the post the comment refers to
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: datetime
+          readOnly: true
+    CommentList:
+      type: array
+      items:
+        $ref: "#/components/schemas/CommentResponse"
+    Error:
+      type: object
+      required:
+        - code
+        - error
+      properties:
+        code:
+          type: integer
+          format: int32
+        error:
+          type: string
