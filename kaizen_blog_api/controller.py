@@ -6,6 +6,7 @@ from kink import inject
 
 from kaizen_blog_api.comment.service import CreateCommentRequest, DeleteCommentRequest, ICommentService
 from kaizen_blog_api.custom_types import LambdaContext, LambdaEvent, LambdaResponse
+from kaizen_blog_api.events import Event
 from kaizen_blog_api.post.service import CreatePostRequest, GetPostRequest, IPostService, UpdateImageRequest
 from kaizen_blog_api.serializers import JSONEncoder
 from kaizen_blog_api.serverless import serverless
@@ -102,3 +103,14 @@ def delete_comment(
         "statusCode": 204,
         "body": "",
     }
+
+
+@inject
+def admin_notify(event: LambdaEvent, context: LambdaContext, service: ICommentService, logger: Logger) -> None:
+    logger.debug(event)
+    logger.debug(context)
+    message = json.loads(event["Records"][0]["Sns"]["Message"])
+    request = validate_and_get_dataclass(message, Event)
+
+    service.notify(request)
+    logger.info("Message sent successfully")

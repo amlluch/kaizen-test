@@ -7,7 +7,7 @@ from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 from PIL import Image as ImageProcess, UnidentifiedImageError
 
-from kaizen_blog_api.common_repo import get_record
+from kaizen_blog_api.common import get_record
 from kaizen_blog_api.errors import AWSError, ImageError, RepositoryError
 from kaizen_blog_api.post.entities import Image, Post
 from kaizen_blog_api.serializers import dict_factory

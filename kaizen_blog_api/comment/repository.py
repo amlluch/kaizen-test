@@ -7,7 +7,7 @@ from botocore.exceptions import ClientError
 
 from kaizen_blog_api import SNS_ARN
 from kaizen_blog_api.comment.entities import Comment
-from kaizen_blog_api.common_repo import get_record
+from kaizen_blog_api.common import get_record
 from kaizen_blog_api.errors import AWSError
 from kaizen_blog_api.events import Event
 from kaizen_blog_api.serializers import dict_factory
@@ -27,11 +27,15 @@ class ICommentRepository(Protocol):
     def delete(self, comment_id: uuid.UUID) -> None:
         ...
 
+    def send_email(self, recipient: str, comment: Comment) -> None:
+        ...
+
 
 class CommentRepository(ICommentRepository):
-    def __init__(self, comments_table: Any, sns_client: Any):
+    def __init__(self, comments_table: Any, sns_client: Any, ses_client: Any):
         self.table = comments_table
         self.sns = sns_client
+        self.ses = ses_client
 
     def insert(self, comment: Comment) -> None:
         try:
@@ -43,7 +47,7 @@ class CommentRepository(ICommentRepository):
         message_attributes = {"action": {"DataType": "String", "StringValue": event.name}}
         self.sns.publish(
             TopicArn=SNS_ARN,
-            Message=json.dumps({"default": json.dumps(asdict(event))}),
+            Message=json.dumps({"default": json.dumps(asdict(event, dict_factory=dict_factory))}),
             MessageStructure="json",
             MessageAttributes=message_attributes,
         )
@@ -56,3 +60,43 @@ class CommentRepository(ICommentRepository):
             self.table.delete_item(Key={"id": str(comment_id)})
         except ClientError as e:
             raise AWSError(f"AWS error {e.response['Error']['Code']} updating record {str(comment_id)}") from e
+
+    def send_email(self, recipient: str, comment: Comment, sender: str = None) -> None:
+        source = "amlluch@gmail.com" if sender is None else sender
+        destination = {
+            "ToAddresses": [
+                recipient,
+            ],
+        }
+        subject = f"Comment on post {comment.post_id} was deleted"
+        body_text = f"The comment was created at {comment.created_at} by user {comment.username} with next text:\n\n{comment.text}"
+        body_html = f"""<html>
+        <head></head>
+        <body>
+          <h1>The comment was created at {comment.created_at} by user {comment.username}</h1>
+          <p>{comment.text}</p>
+        </body>
+        </html>
+                    """
+        charset = "UTF-8"
+
+        message = {
+            "Body": {
+                "Html": {
+                    "Charset": charset,
+                    "Data": body_html,
+                },
+                "Text": {
+                    "Charset": charset,
+                    "Data": body_text,
+                },
+            },
+            "Subject": {
+                "Charset": charset,
+                "Data": subject,
+            },
+        }
+        try:
+            self.ses.send_email(Destination=destination, Message=message, Source=source)
+        except ClientError as e:
+            raise AWSError(f"AWS error {e.response['Error']['Code']} sending email to admin") from e
