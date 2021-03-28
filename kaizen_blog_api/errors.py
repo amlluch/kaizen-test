@@ -16,3 +16,7 @@ class RepositoryError(ApiError):
 
 class RecordNotFound(ApiError):
     status_code = 404
+
+
+class ImageError(ApiError):
+    status_code = 415

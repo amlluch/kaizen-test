@@ -90,3 +90,8 @@ def many_dummy_posts() -> None:
     for num in range(25):
         post = Post(id=uuid.uuid4(), text=f"Post number {num}", username=f"user {num}")
         posts_table.put_item(Item=asdict(post, dict_factory=dict_factory))
+
+
+@pytest.fixture()
+def image_bytes() -> bytes:
+    return b"GIF89a\x01\x00\x01\x00\x00\xff\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;"

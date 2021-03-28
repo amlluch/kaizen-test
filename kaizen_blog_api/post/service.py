@@ -1,7 +1,9 @@
+import base64
 import uuid
 from dataclasses import asdict, dataclass
 from typing import Iterable, Protocol, runtime_checkable
 
+from kaizen_blog_api.errors import ImageError
 from kaizen_blog_api.post.entities import Post
 from kaizen_blog_api.post.repository import IPostRepository
 from kaizen_blog_api.serializers import dict_factory
@@ -19,6 +21,13 @@ class GetPostRequest:
     id: uuid.UUID
 
 
+class UpdateImageRequest:
+    def __init__(self, post_id: str, image: str, is_base64_encoded: bool):
+        self.image = image
+        self.is_base64_encoded = is_base64_encoded
+        self.post_id = uuid.UUID(post_id)
+
+
 @runtime_checkable
 class IPostService(Protocol):
     def create(self, request: CreatePostRequest) -> Post:
@@ -28,6 +37,9 @@ class IPostService(Protocol):
         ...
 
     def list_reversed(self) -> Iterable[Post]:
+        ...
+
+    def update_logo(self, request: UpdateImageRequest) -> Post:
         ...
 
 
@@ -52,3 +64,22 @@ class PostService(IPostService):
         posts = self._repository.list_by_date_reversed()
         for post in posts:
             yield post
+
+    def update_logo(self, request: UpdateImageRequest) -> Post:
+        if not request.image:
+            raise ImageError("File should be an image")
+        if request.is_base64_encoded:
+            image = base64.b64decode(request.image)
+        else:
+            pos = request.image.find("base64,")
+            if pos > 0:
+                image = base64.b64decode(request.image[(pos + 7) :])  # noqa: E203
+            else:
+                raise ImageError("Invalid image file")
+
+        post = self._repository.get(request.post_id)
+        uploaded_image = self._repository.upload(image, request.post_id)
+        post.image = uploaded_image
+        self._repository.update(post, request.post_id)
+
+        return self._repository.get(request.post_id)
