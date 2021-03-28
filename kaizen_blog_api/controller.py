@@ -136,3 +136,19 @@ def read_comment(
         "statusCode": 200,
         "body": json.dumps(asdict(result), cls=JSONEncoder),
     }
+
+
+@serverless
+@inject
+def list_comments(
+    event: LambdaEvent, context: LambdaContext, service: ICommentService, logger: Logger
+) -> LambdaResponse:
+    logger.debug(event)
+    logger.debug(context)
+
+    result = service.list_reversed()
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps([asdict(comment) for comment in result], cls=JSONEncoder),
+    }

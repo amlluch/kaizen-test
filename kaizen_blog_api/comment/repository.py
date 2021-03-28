@@ -1,16 +1,17 @@
 import json
 import uuid
 from dataclasses import asdict
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Iterable, Protocol, runtime_checkable
 
 from botocore.exceptions import ClientError
 
 from kaizen_blog_api import SNS_ARN
 from kaizen_blog_api.comment.entities import Comment
 from kaizen_blog_api.common import get_record
-from kaizen_blog_api.errors import AWSError
+from kaizen_blog_api.errors import AWSError, RepositoryError
 from kaizen_blog_api.events import Event
 from kaizen_blog_api.serializers import dict_factory
+from kaizen_blog_api.validators import validate_and_get_dataclass
 
 
 @runtime_checkable
@@ -28,6 +29,9 @@ class ICommentRepository(Protocol):
         ...
 
     def send_email(self, recipient: str, comment: Comment) -> None:
+        ...
+
+    def list_by_date_reversed(self) -> Iterable[Comment]:
         ...
 
 
@@ -54,6 +58,13 @@ class CommentRepository(ICommentRepository):
 
     def get(self, comment_id: uuid.UUID) -> Comment:
         return get_record(comment_id, Comment, self.table)
+
+    def list_by_date_reversed(self) -> Iterable[Comment]:
+        result = self.table.scan(IndexName="by_date")
+        if result["ResponseMetadata"]["HTTPStatusCode"] not in range(200, 300):
+            raise RepositoryError("error occurred when retrieving post details")
+        for item in reversed(result["Items"]):
+            yield validate_and_get_dataclass(item, Comment)
 
     def delete(self, comment_id: uuid.UUID) -> None:
         try:

@@ -10,7 +10,7 @@ from moto import mock_ses, mock_sns
 from kaizen_blog_api.comment.entities import Comment
 from kaizen_blog_api.comment.repository import CommentRepository
 from kaizen_blog_api.comment.service import CommentService
-from kaizen_blog_api.controller import admin_notify, create_comment, delete_comment, read_comment
+from kaizen_blog_api.controller import admin_notify, create_comment, delete_comment, list_comments, read_comment
 from kaizen_blog_api.events import CommentDeletedEvent
 
 
@@ -97,3 +97,18 @@ class TestComment:
         response = read_comment(event, None, service)
         assert response["statusCode"] == 200
         ...
+
+    @pytest.mark.usefixtures("many_dummy_comments")
+    @pytest.mark.usefixtures("dynamodb_tables_fixture")
+    def test_list_posts(self) -> None:
+        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+        table = dynamodb.Table("comments")
+        repository = CommentRepository(table, None, None)
+        service = CommentService(repository)
+
+        # when
+        response = list_comments({}, None, service)
+
+        # then
+        body = json.loads(response["body"])
+        assert body[0]["created_at"] > body[-1]["created_at"]

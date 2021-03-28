@@ -2,7 +2,7 @@ import json
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol, runtime_checkable
+from typing import Iterable, Protocol, runtime_checkable
 
 from kaizen_blog_api import ADMIN_EMAIL_ADDRESS
 from kaizen_blog_api.comment.entities import Comment
@@ -43,6 +43,9 @@ class ICommentService(Protocol):
     def read(self, request: GetCommentRequest) -> Comment:
         ...
 
+    def list_reversed(self) -> Iterable[Comment]:
+        ...
+
 
 class CommentService(ICommentService):
     def __init__(self, repository: ICommentRepository):
@@ -67,3 +70,8 @@ class CommentService(ICommentService):
 
     def read(self, request: GetCommentRequest) -> Comment:
         return self._repository.get(request.id)
+
+    def list_reversed(self) -> Iterable[Comment]:
+        comments = self._repository.list_by_date_reversed()
+        for comment in comments:
+            yield comment

@@ -95,3 +95,14 @@ def many_dummy_posts() -> None:
 @pytest.fixture()
 def image_bytes() -> bytes:
     return b"GIF89a\x01\x00\x01\x00\x00\xff\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;"
+
+
+@pytest.mark.usefixtures("dynamodb_tables_fixture")
+@pytest.fixture()
+def many_dummy_comments() -> None:
+    dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+    posts_table = dynamodb.Table("comments")
+
+    for num in range(25):
+        comment = Comment(id=uuid.uuid4(), text=f"Post number {num}", username=f"user {num}", post_id=uuid.uuid4())
+        posts_table.put_item(Item=asdict(comment, dict_factory=dict_factory))
