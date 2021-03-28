@@ -42,6 +42,5 @@ class CommentService(ICommentService):
 
     def delete(self, request: DeleteCommentRequest) -> None:
         comment = self._repository.get(request.id)
-        print(comment)
         self._repository.delete(request.id)
         self._repository.dispatch_sns(CommentDeletedEvent(comment))
