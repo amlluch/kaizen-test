@@ -1,6 +1,7 @@
 import json
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any, Dict, List, Tuple
 
 from marshmallow import fields
@@ -15,7 +16,7 @@ def dict_factory(data: List[Tuple[str, Any]]) -> Dict[str, Any]:
         if isinstance(value, Dict)
         else str(value)
         if isinstance(value, uuid.UUID)
-        else int(value.timestamp())
+        else Decimal(value.timestamp())
         if isinstance(value, datetime)
         else value
         for key, value in data
@@ -31,6 +32,8 @@ class JSONEncoder(json.JSONEncoder):
             return o.isoformat()
         if isinstance(o, date):
             return o.isoformat()
+        if isinstance(o, Decimal):
+            return float(o)
         return json.JSONEncoder.default(self, o)
 
 
@@ -38,6 +41,8 @@ class CustomDateTimeField(fields.DateTime):
     """Accept datetime values that are already datetime type"""
 
     def _deserialize(self, value, attr, data, **kwargs):  # type: ignore
+        if isinstance(value, Decimal):
+            value = datetime.fromtimestamp(int(value))
         if isinstance(value, datetime):
             return value
         return super()._deserialize(value, attr, data)

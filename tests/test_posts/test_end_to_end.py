@@ -1,10 +1,11 @@
 import json
+import uuid
 from typing import Dict
 
 import boto3
 import pytest
 
-from kaizen_blog_api.controller import create_post
+from kaizen_blog_api.controller import create_post, read_post
 from kaizen_blog_api.post.repository import PostRepository
 from kaizen_blog_api.post.service import PostService
 
@@ -42,3 +43,45 @@ class TestPost:
 
         # then
         assert result["statusCode"] == 422
+
+    @pytest.mark.usefixtures("dynamodb_tables_fixture")
+    @pytest.mark.parametrize(
+        "body",
+        [{"text": "blog text", "username": "user test"}],
+    )
+    def test_read_post(self, body: Dict) -> None:
+        # given
+        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+        posts_table = dynamodb.Table("posts")
+        repository = PostRepository(posts_table)
+        service = PostService(repository)
+        event: Dict = {"body": json.dumps(body)}
+
+        # when
+        result = create_post(event, None, service)
+        body = json.loads(result["body"])
+
+        # then
+        event = {"pathParameters": {"id": body["id"]}}
+        response = read_post(event, None, service)
+
+        assert response["statusCode"] == 200
+
+    @pytest.mark.usefixtures("dynamodb_tables_fixture")
+    @pytest.mark.parametrize(
+        "body",
+        [{"text": "blog text", "username": "user test"}],
+    )
+    def test_read_post_not_existing_record(self, body: Dict) -> None:
+
+        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+        posts_table = dynamodb.Table("posts")
+        repository = PostRepository(posts_table)
+        service = PostService(repository)
+
+        # given
+        event = {"pathParameters": {"id": str(uuid.uuid4())}}
+        response = read_post(event, None, service)
+
+        # then
+        assert response["statusCode"] == 404

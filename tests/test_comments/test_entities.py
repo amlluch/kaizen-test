@@ -1,5 +1,6 @@
 import uuid
 from dataclasses import asdict
+from decimal import Decimal
 
 from kaizen_blog_api.comment.entities import Comment
 from kaizen_blog_api.serializers import dict_factory
@@ -20,4 +21,4 @@ def test_serialize(dummy_comment: Comment) -> None:
     # then
     assert isinstance(comment["id"], str)
     assert isinstance(comment["post_id"], str)
-    assert isinstance(comment["created_at"], int)
+    assert isinstance(comment["created_at"], Decimal)

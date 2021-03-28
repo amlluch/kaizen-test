@@ -14,9 +14,17 @@ class CreatePostRequest:
     username: str
 
 
+@dataclass
+class GetPostRequest:
+    id: uuid.UUID
+
+
 @runtime_checkable
 class IPostService(Protocol):
     def create(self, request: CreatePostRequest) -> Post:
+        ...
+
+    def read(self, request: GetPostRequest) -> Post:
         ...
 
 
@@ -33,3 +41,6 @@ class PostService(IPostService):
         post = validate_and_get_dataclass(post_data, Post)
         self._repository.insert(post)
         return post
+
+    def read(self, request: GetPostRequest) -> Post:
+        return self._repository.get(request.id)
