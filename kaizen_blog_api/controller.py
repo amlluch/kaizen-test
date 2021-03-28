@@ -4,6 +4,7 @@ from logging import Logger
 
 from kink import inject
 
+from kaizen_blog_api.comment.service import CreateCommentRequest, ICommentService
 from kaizen_blog_api.custom_types import LambdaContext, LambdaEvent, LambdaResponse
 from kaizen_blog_api.post.service import CreatePostRequest, GetPostRequest, IPostService, UpdateImageRequest
 from kaizen_blog_api.serializers import JSONEncoder
@@ -67,3 +68,20 @@ def update_image(event: LambdaEvent, context: LambdaContext, service: IPostServi
     request = UpdateImageRequest(post_id, body, is_base64_encoded)
     resource = service.update_logo(request)
     return {"statusCode": 200, "body": json.dumps(asdict(resource), cls=JSONEncoder)}
+
+
+@serverless
+@inject
+def create_comment(
+    event: LambdaEvent, context: LambdaContext, service: ICommentService, logger: Logger
+) -> LambdaResponse:
+    logger.debug(event)
+    logger.debug(context)
+
+    request = validate_and_get_dataclass(json.loads(event["body"]), CreateCommentRequest)
+    result = service.create(request)
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps(asdict(result), cls=JSONEncoder),
+    }

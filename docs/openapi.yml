@@ -206,6 +206,21 @@ paths:
               example:
                 code: 404
                 error: Comment not found
+    delete:
+      summary: Delete given comment
+      operationId: deleteComment
+      responses:
+        204:
+          description: Delete was successful, returns no content.
+        404:
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: 404
+                error: Offer not found
 
 components:
   schemas:
