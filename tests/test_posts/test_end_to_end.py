@@ -7,7 +7,7 @@ import boto3
 import pytest
 from moto import mock_s3
 
-from kaizen_blog_api.controller import create_post, list_posts, read_post, update_image
+from kaizen_blog_api.controller import create_post, like_comment, list_posts, read_post, update_image
 from kaizen_blog_api.post.repository import PostRepository
 from kaizen_blog_api.post.service import PostService
 
@@ -142,3 +142,27 @@ class TestPost:
         body = json.loads(response["body"])
         assert "image" in body
         assert body["image"]["id"] == body["id"]
+
+    @pytest.mark.usefixtures("dynamodb_tables_fixture")
+    @pytest.mark.parametrize(
+        "body",
+        [{"text": "blog text", "username": "user test"}],
+    )
+    def test_like_comment(self, body: Dict) -> None:
+        # given
+        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+        posts_table = dynamodb.Table("posts")
+        repository = PostRepository(posts_table, None, None)
+        service = PostService(repository)
+
+        event: Dict = {"body": json.dumps(body)}
+        # when
+        result = create_post(event, None, service)
+        body = json.loads(result["body"])
+        event = {"pathParameters": {"id": body["id"]}}
+        like_response = like_comment(event, None, service)
+        assert like_response["statusCode"] == 200
+        response = read_post(event, None, service)
+        body = json.loads(response["body"])
+        assert body["likes"] == 1
+        assert response["statusCode"] == 200

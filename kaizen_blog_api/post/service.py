@@ -21,6 +21,11 @@ class GetPostRequest:
     id: uuid.UUID
 
 
+@dataclass
+class LikePostRequest:
+    id: uuid.UUID
+
+
 class UpdateImageRequest:
     def __init__(self, post_id: str, image: str, is_base64_encoded: bool):
         self.image = image
@@ -40,6 +45,9 @@ class IPostService(Protocol):
         ...
 
     def update_logo(self, request: UpdateImageRequest) -> Post:
+        ...
+
+    def like(self, request: LikePostRequest) -> Post:
         ...
 
 
@@ -79,3 +87,9 @@ class PostService(IPostService):
         self._repository.update(post, request.post_id)
 
         return self._repository.get(request.post_id)
+
+    def like(self, request: LikePostRequest) -> Post:
+        post = self._repository.get(request.id)
+        post.likes += 1
+        self._repository.update(post, request.id)
+        return post

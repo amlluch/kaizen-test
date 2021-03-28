@@ -12,7 +12,13 @@ from kaizen_blog_api.comment.service import (
 )
 from kaizen_blog_api.custom_types import LambdaContext, LambdaEvent, LambdaResponse
 from kaizen_blog_api.events import Event
-from kaizen_blog_api.post.service import CreatePostRequest, GetPostRequest, IPostService, UpdateImageRequest
+from kaizen_blog_api.post.service import (
+    CreatePostRequest,
+    GetPostRequest,
+    IPostService,
+    LikePostRequest,
+    UpdateImageRequest,
+)
 from kaizen_blog_api.serializers import JSONEncoder
 from kaizen_blog_api.serverless import serverless
 from kaizen_blog_api.validators import validate_and_get_dataclass
@@ -151,4 +157,19 @@ def list_comments(
     return {
         "statusCode": 200,
         "body": json.dumps([asdict(comment) for comment in result], cls=JSONEncoder),
+    }
+
+
+@serverless
+@inject
+def like_comment(event: LambdaEvent, context: LambdaContext, service: IPostService, logger: Logger) -> LambdaResponse:
+    logger.debug(event)
+    logger.debug(context)
+
+    request = validate_and_get_dataclass(event.get("pathParameters") or {}, LikePostRequest)
+    result = service.like(request)
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps(asdict(result), cls=JSONEncoder),
     }
