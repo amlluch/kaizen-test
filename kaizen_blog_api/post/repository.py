@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import asdict, dataclass
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Iterable, Protocol, runtime_checkable
 
 from boto3.dynamodb import conditions
 from botocore.exceptions import ClientError
@@ -23,6 +23,9 @@ class IPostRepository(Protocol):
         ...
 
     def get(self, post_id: uuid.UUID) -> Post:
+        ...
+
+    def list_by_date_reversed(self) -> Iterable[Post]:
         ...
 
 
@@ -48,3 +51,10 @@ class PostRepository(IPostRepository):
         post = validate_and_get_dataclass(result["Items"][0], Post)
 
         return post
+
+    def list_by_date_reversed(self) -> Iterable[Post]:
+        result = self.table.scan(IndexName="by_date")
+        if result["ResponseMetadata"]["HTTPStatusCode"] not in range(200, 300):
+            raise RepositoryError("error occurred when retrieving post details")
+        for item in reversed(result["Items"]):
+            yield validate_and_get_dataclass(item, Post)

@@ -5,7 +5,7 @@ from typing import Dict
 import boto3
 import pytest
 
-from kaizen_blog_api.controller import create_post, read_post
+from kaizen_blog_api.controller import create_post, list_posts, read_post
 from kaizen_blog_api.post.repository import PostRepository
 from kaizen_blog_api.post.service import PostService
 
@@ -85,3 +85,18 @@ class TestPost:
 
         # then
         assert response["statusCode"] == 404
+
+    @pytest.mark.usefixtures("many_dummy_posts")
+    @pytest.mark.usefixtures("dynamodb_tables_fixture")
+    def test_list_posts(self) -> None:
+        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+        posts_table = dynamodb.Table("posts")
+        repository = PostRepository(posts_table)
+        service = PostService(repository)
+
+        # when
+        response = list_posts({}, None, service)
+
+        # then
+        body = json.loads(response["body"])
+        assert body[0]["created_at"] > body[-1]["created_at"]

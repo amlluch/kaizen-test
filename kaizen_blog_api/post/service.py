@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import asdict, dataclass
-from typing import Protocol, runtime_checkable
+from typing import Iterable, Protocol, runtime_checkable
 
 from kaizen_blog_api.post.entities import Post
 from kaizen_blog_api.post.repository import IPostRepository
@@ -27,6 +27,9 @@ class IPostService(Protocol):
     def read(self, request: GetPostRequest) -> Post:
         ...
 
+    def list_reversed(self) -> Iterable[Post]:
+        ...
+
 
 class PostService(IPostService):
     def __init__(self, repository: IPostRepository):
@@ -44,3 +47,8 @@ class PostService(IPostService):
 
     def read(self, request: GetPostRequest) -> Post:
         return self._repository.get(request.id)
+
+    def list_reversed(self) -> Iterable[Post]:
+        posts = self._repository.list_by_date_reversed()
+        for post in posts:
+            yield post

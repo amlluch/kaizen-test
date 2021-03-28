@@ -32,8 +32,6 @@ class JSONEncoder(json.JSONEncoder):
             return o.isoformat()
         if isinstance(o, date):
             return o.isoformat()
-        if isinstance(o, Decimal):
-            return float(o)
         return json.JSONEncoder.default(self, o)
 
 
@@ -42,7 +40,7 @@ class CustomDateTimeField(fields.DateTime):
 
     def _deserialize(self, value, attr, data, **kwargs):  # type: ignore
         if isinstance(value, Decimal):
-            value = datetime.fromtimestamp(int(value))
+            value = datetime.fromtimestamp(float(value))
         if isinstance(value, datetime):
             return value
         return super()._deserialize(value, attr, data)

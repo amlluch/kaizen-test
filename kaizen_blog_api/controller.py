@@ -39,3 +39,17 @@ def read_post(event: LambdaEvent, context: LambdaContext, service: IPostService,
         "statusCode": 200,
         "body": json.dumps(asdict(result), cls=JSONEncoder),
     }
+
+
+@serverless
+@inject
+def list_posts(event: LambdaEvent, context: LambdaContext, service: IPostService, logger: Logger) -> LambdaResponse:
+    logger.debug(event)
+    logger.debug(context)
+
+    result = service.list_reversed()
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps([asdict(post) for post in result], cls=JSONEncoder),
+    }
