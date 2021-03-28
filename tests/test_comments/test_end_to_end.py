@@ -10,7 +10,7 @@ from moto import mock_ses, mock_sns
 from kaizen_blog_api.comment.entities import Comment
 from kaizen_blog_api.comment.repository import CommentRepository
 from kaizen_blog_api.comment.service import CommentService
-from kaizen_blog_api.controller import admin_notify, create_comment, delete_comment
+from kaizen_blog_api.controller import admin_notify, create_comment, delete_comment, read_comment
 from kaizen_blog_api.events import CommentDeletedEvent
 
 
@@ -75,3 +75,25 @@ class TestComment:
         event: Dict = {"Records": [{"Sns": {"Message": json.dumps(body)}}]}
         service = CommentService(repository)
         admin_notify(event, None, service)
+
+    @pytest.mark.usefixtures("dynamodb_tables_fixture")
+    @pytest.mark.parametrize(
+        "body",
+        [{"text": "blog text", "username": "user test", "post_id": str(uuid.uuid4())}],
+    )
+    def test_read_comment(self, body: Dict) -> None:
+        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+        table = dynamodb.Table("comments")
+        repository = CommentRepository(table, None, None)
+        service = CommentService(repository)
+
+        event: Dict = {"body": json.dumps(body)}
+        # given
+        result = create_comment(event, None, service)
+        body = json.loads(result["body"])
+
+        # then
+        event = {"pathParameters": {"id": body["id"]}}
+        response = read_comment(event, None, service)
+        assert response["statusCode"] == 200
+        ...

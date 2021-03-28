@@ -20,6 +20,11 @@ class CreateCommentRequest:
 
 
 @dataclass
+class GetCommentRequest:
+    id: uuid.UUID
+
+
+@dataclass
 class DeleteCommentRequest:
     id: uuid.UUID
 
@@ -33,6 +38,9 @@ class ICommentService(Protocol):
         ...
 
     def notify(self, request: Event) -> None:
+        ...
+
+    def read(self, request: GetCommentRequest) -> Comment:
         ...
 
 
@@ -56,3 +64,6 @@ class CommentService(ICommentService):
         payload["created_at"] = datetime.fromtimestamp(payload["created_at"])
         comment = validate_and_get_dataclass(payload, Comment)
         self._repository.send_email(ADMIN_EMAIL_ADDRESS, comment)
+
+    def read(self, request: GetCommentRequest) -> Comment:
+        return self._repository.get(request.id)
