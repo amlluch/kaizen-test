@@ -4,7 +4,7 @@ from logging import Logger
 
 from kink import inject
 
-from kaizen_blog_api.comment.service import CreateCommentRequest, ICommentService
+from kaizen_blog_api.comment.service import CreateCommentRequest, DeleteCommentRequest, ICommentService
 from kaizen_blog_api.custom_types import LambdaContext, LambdaEvent, LambdaResponse
 from kaizen_blog_api.post.service import CreatePostRequest, GetPostRequest, IPostService, UpdateImageRequest
 from kaizen_blog_api.serializers import JSONEncoder
@@ -84,4 +84,21 @@ def create_comment(
     return {
         "statusCode": 200,
         "body": json.dumps(asdict(result), cls=JSONEncoder),
+    }
+
+
+@serverless
+@inject
+def delete_comment(
+    event: LambdaEvent, context: LambdaContext, service: ICommentService, logger: Logger
+) -> LambdaResponse:
+    logger.debug(event)
+    logger.debug(context)
+
+    request = validate_and_get_dataclass(event.get("pathParameters") or {}, DeleteCommentRequest)
+    service.delete(request)
+
+    return {
+        "statusCode": 204,
+        "body": "",
     }

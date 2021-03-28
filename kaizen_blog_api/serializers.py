@@ -32,6 +32,8 @@ class JSONEncoder(json.JSONEncoder):
             return o.isoformat()
         if isinstance(o, date):
             return o.isoformat()
+        if isinstance(o, Decimal):
+            return float(o)
         return json.JSONEncoder.default(self, o)
 
 

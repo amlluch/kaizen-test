@@ -1,10 +1,11 @@
 import uuid
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from kaizen_blog_api.comment.entities import Comment
 from kaizen_blog_api.comment.repository import ICommentRepository
-from kaizen_blog_api.serializers import dict_factory
+from kaizen_blog_api.common_repo import request_to_insert
+from kaizen_blog_api.events import CommentDeletedEvent
 from kaizen_blog_api.validators import validate_and_get_dataclass
 
 
@@ -15,9 +16,17 @@ class CreateCommentRequest:
     post_id: uuid.UUID
 
 
+@dataclass
+class DeleteCommentRequest:
+    id: uuid.UUID
+
+
 @runtime_checkable
 class ICommentService(Protocol):
     def create(self, request: CreateCommentRequest) -> Comment:
+        ...
+
+    def delete(self, request: DeleteCommentRequest) -> None:
         ...
 
 
@@ -26,11 +35,13 @@ class CommentService(ICommentService):
         self._repository = repository
 
     def create(self, request: CreateCommentRequest) -> Comment:
-        comment_data = {
-            name: value for name, value in asdict(request, dict_factory=dict_factory).items() if value is not None
-        }
-        comment_data["id"] = uuid.uuid4()
-
-        comment = validate_and_get_dataclass(comment_data, Comment)
+        data = request_to_insert(request)
+        comment = validate_and_get_dataclass(data, Comment)
         self._repository.insert(comment)
         return comment
+
+    def delete(self, request: DeleteCommentRequest) -> None:
+        comment = self._repository.get(request.id)
+        print(comment)
+        self._repository.delete(request.id)
+        self._repository.dispatch_sns(CommentDeletedEvent(comment))

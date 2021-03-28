@@ -1,12 +1,12 @@
 import base64
 import uuid
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Iterable, Protocol, runtime_checkable
 
+from kaizen_blog_api.common_repo import request_to_insert
 from kaizen_blog_api.errors import ImageError
 from kaizen_blog_api.post.entities import Post
 from kaizen_blog_api.post.repository import IPostRepository
-from kaizen_blog_api.serializers import dict_factory
 from kaizen_blog_api.validators import validate_and_get_dataclass
 
 
@@ -48,12 +48,8 @@ class PostService(IPostService):
         self._repository = repository
 
     def create(self, request: CreatePostRequest) -> Post:
-        post_data = {
-            name: value for name, value in asdict(request, dict_factory=dict_factory).items() if value is not None
-        }
-        post_data["id"] = uuid.uuid4()
-
-        post = validate_and_get_dataclass(post_data, Post)
+        data = request_to_insert(request)
+        post = validate_and_get_dataclass(data, Post)
         self._repository.insert(post)
         return post
 
