@@ -1,8 +1,9 @@
 import json
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Iterable, Protocol, runtime_checkable
+
+from kink import inject
 
 from kaizen_blog_api import ADMIN_EMAIL_ADDRESS
 from kaizen_blog_api.comment.entities import Comment
@@ -47,6 +48,7 @@ class ICommentService(Protocol):
         ...
 
 
+@inject(alias=ICommentService)
 class CommentService(ICommentService):
     def __init__(self, repository: ICommentRepository):
         self._repository = repository
@@ -64,7 +66,6 @@ class CommentService(ICommentService):
 
     def notify(self, request: Event) -> None:
         payload = json.loads(request.payload)
-        payload["created_at"] = datetime.fromtimestamp(payload["created_at"])
         comment = validate_and_get_dataclass(payload, Comment)
         self._repository.send_email(ADMIN_EMAIL_ADDRESS, comment)
 

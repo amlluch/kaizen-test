@@ -24,7 +24,7 @@ class TestComment:
         # given
         dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
         table = dynamodb.Table("comments")
-        repository = CommentRepository(table, None, None)
+        repository = CommentRepository(table)  # type: ignore
         service = CommentService(repository)
 
         event = {"body": json.dumps(body)}
@@ -44,7 +44,7 @@ class TestComment:
         table = dynamodb.Table("comments")
         sns = boto3.client("sns", region_name="eu-west-1")
         sns.create_topic(Name="testing")
-        repository = CommentRepository(table, sns, None)
+        repository = CommentRepository(table, sns)  # type: ignore
         service = CommentService(repository)
 
         event: Dict = {"body": json.dumps(body)}
@@ -71,7 +71,7 @@ class TestComment:
     def test_notify_deleted_comment(self, body: Dict) -> None:
         ses = boto3.client("ses", region_name="eu-west-1")
         ses.verify_email_identity(EmailAddress="amlluch@gmail.com")
-        repository = CommentRepository(None, None, ses)
+        repository = CommentRepository(ses_client=ses)  # type: ignore
         event: Dict = {"Records": [{"Sns": {"Message": json.dumps(body)}}]}
         service = CommentService(repository)
         admin_notify(event, None, service)
@@ -84,7 +84,7 @@ class TestComment:
     def test_read_comment(self, body: Dict) -> None:
         dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
         table = dynamodb.Table("comments")
-        repository = CommentRepository(table, None, None)
+        repository = CommentRepository(table)  # type: ignore
         service = CommentService(repository)
 
         event: Dict = {"body": json.dumps(body)}
@@ -103,7 +103,7 @@ class TestComment:
     def test_list_posts(self) -> None:
         dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
         table = dynamodb.Table("comments")
-        repository = CommentRepository(table, None, None)
+        repository = CommentRepository(table)  # type: ignore
         service = CommentService(repository)
 
         # when

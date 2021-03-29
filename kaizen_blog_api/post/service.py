@@ -3,6 +3,8 @@ import uuid
 from dataclasses import dataclass
 from typing import Iterable, Protocol, runtime_checkable
 
+from kink import inject
+
 from kaizen_blog_api.common import BaseRequestClass, request_to_insert
 from kaizen_blog_api.errors import ImageError
 from kaizen_blog_api.post.entities import Post
@@ -51,6 +53,7 @@ class IPostService(Protocol):
         ...
 
 
+@inject(alias=IPostService)
 class PostService(IPostService):
     def __init__(self, repository: IPostRepository):
         self._repository = repository

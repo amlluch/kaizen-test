@@ -1,9 +1,11 @@
 import json
 import uuid
 from dataclasses import asdict
-from typing import Any, Iterable, Protocol, runtime_checkable
+from typing import Iterable, Protocol, runtime_checkable
 
+from botocore.client import BaseClient
 from botocore.exceptions import ClientError
+from kink import inject
 
 from kaizen_blog_api import SNS_ARN
 from kaizen_blog_api.comment.entities import Comment
@@ -35,8 +37,9 @@ class ICommentRepository(Protocol):
         ...
 
 
+@inject(alias=ICommentRepository)
 class CommentRepository(ICommentRepository):
-    def __init__(self, comments_table: Any, sns_client: Any, ses_client: Any):
+    def __init__(self, comments_table: BaseClient, sns_client: BaseClient, ses_client: BaseClient):
         self.table = comments_table
         self.sns = sns_client
         self.ses = ses_client

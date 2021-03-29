@@ -268,7 +268,7 @@ components:
           type: string
           format: uuid
           description: File name
-          example: 2d4b0d04-a7f1-4a62-a7f1-a5fd4fa0b04d.jpeg
+          example: 2d4b0d04-a7f1-4a62-a7f1-a5fd4fa0b04d
         url:
           type: string
           format: url

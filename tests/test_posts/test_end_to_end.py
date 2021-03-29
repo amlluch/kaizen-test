@@ -22,7 +22,7 @@ class TestPost:
         # given
         dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
         posts_table = dynamodb.Table("posts")
-        repository = PostRepository(posts_table, None, None)
+        repository = PostRepository(posts_table)  # type: ignore
         service = PostService(repository)
 
         event = {"body": json.dumps(body)}
@@ -55,7 +55,7 @@ class TestPost:
         # given
         dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
         posts_table = dynamodb.Table("posts")
-        repository = PostRepository(posts_table, None, None)
+        repository = PostRepository(posts_table)  # type: ignore
         service = PostService(repository)
         event: Dict = {"body": json.dumps(body)}
 
@@ -78,7 +78,7 @@ class TestPost:
 
         dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
         posts_table = dynamodb.Table("posts")
-        repository = PostRepository(posts_table, None, None)
+        repository = PostRepository(posts_table)  # type: ignore
         service = PostService(repository)
 
         # given
@@ -93,7 +93,7 @@ class TestPost:
     def test_list_posts(self) -> None:
         dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
         posts_table = dynamodb.Table("posts")
-        repository = PostRepository(posts_table, None, None)
+        repository = PostRepository(posts_table)  # type: ignore
         service = PostService(repository)
 
         # when
@@ -152,7 +152,7 @@ class TestPost:
         # given
         dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
         posts_table = dynamodb.Table("posts")
-        repository = PostRepository(posts_table, None, None)
+        repository = PostRepository(posts_table)  # type: ignore
         service = PostService(repository)
 
         event: Dict = {"body": json.dumps(body)}

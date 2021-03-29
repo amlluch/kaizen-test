@@ -1,10 +1,11 @@
 import uuid
 from dataclasses import asdict
 from io import BytesIO
-from typing import Any, Iterable, Optional, Protocol, runtime_checkable
+from typing import Iterable, Protocol, runtime_checkable
 
 from botocore.client import BaseClient
 from botocore.exceptions import ClientError
+from kink import inject
 from PIL import Image as ImageProcess, UnidentifiedImageError
 
 from kaizen_blog_api.common import get_record
@@ -32,8 +33,9 @@ class IPostRepository(Protocol):
         ...
 
 
+@inject(alias=IPostRepository)
 class PostRepository(IPostRepository):
-    def __init__(self, posts_table: Any, bucket_name: Optional[str], s3_client: Optional[BaseClient]) -> None:
+    def __init__(self, posts_table: BaseClient, bucket_name: str, s3_client: BaseClient) -> None:
         self.table = posts_table
         self._s3_client = s3_client
         self._bucket_name = bucket_name
@@ -66,7 +68,6 @@ class PostRepository(IPostRepository):
         image_format = img.format
         name = f"{key}.{image_format}".lower()
         url = f"https://{self._bucket_name}.s3.amazonaws.com/posts/{name}"
-        assert self._s3_client
 
         try:
             self._s3_client.upload_fileobj(fp, self._bucket_name, f"posts/{key}", ExtraArgs={"ACL": "public-read"})
