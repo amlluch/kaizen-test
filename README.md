@@ -71,4 +71,54 @@ Like | A user want to be able to "like" updates | LOW | Given I'm on the Kaizen 
 
 ## Technical architecture
 
-Please replace the text in this section by a short paragraph detailing how you will be architecting the solution. Which services you are going to use, why you think that they're the most appropriate and how they are going to interact with each other. We're not looking for a fully detailed technical documentation here, but at least something that quickly enables us (and other developers) to understand what you've done and how.
+### Infrastructure
+
+The architecture is as follows:
+
+![Example](Gateway%20API%20architecture.jpeg)
+
+![Example](Admin%20Email%20architecture.jpeg)
+
+Two dynamodb tables are used and are indexed by the created_at field. The images will be uploaded to a separate endpoint that will store them in an s3 bucket.
+
+When a comment is deleted, an SNS message will be sent. A lambda function subscribed to the Topic will receive the message and send an email to the administrator.
+
+For IP whitelisting, a resource policy as follows will be used:
+```angular2html
+{
+  "Effect": "Deny",
+  "Principal": "*",
+  "Action": "execute-api:Invoke",
+  "Resource": "execute-api:/*/*/*",
+  "Condition": {
+    "NotIpAddress": {
+      "aws:SourceIp": ["sourceIpOrCIDRBlock", "sourceIpOrCIDRBlock"]
+       }
+    }
+}
+```
+### Python code
+#### Setup
+1. Install dependencies:
+
+```bash
+$ poetry install
+```
+
+2. Setup pre-commit hooks before committing:
+
+```bash
+$ poetry run pre-commit install
+```
+#### Testing
+```bash
+$ poetry run pytest
+```
+#### Libraries used
+This job makes extensive use of dependency injection. I know it is not very common in Python but nevertheless I think it is a great idea, and I love it. For this purpose I will use the `kink` library
+
+For data input and data validation I use `marshmallow` combined with `dataclasses`. This way we ensure that all input data is valid and that the classes are consistent.
+
+All tests are performed with `pytest. First I develop the whole application locally and test it with tests. Once everything is working, then I deploy to AWS.
+
+I use `pre-commit` for development along with `flake8`, `black` and `isort`. I also use `mypy` for typing hints.
