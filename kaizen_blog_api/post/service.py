@@ -3,7 +3,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Iterable, Protocol, runtime_checkable
 
-from kaizen_blog_api.common import request_to_insert
+from kaizen_blog_api.common import BaseRequestClass, request_to_insert
 from kaizen_blog_api.errors import ImageError
 from kaizen_blog_api.post.entities import Post
 from kaizen_blog_api.post.repository import IPostRepository
@@ -17,13 +17,13 @@ class CreatePostRequest:
 
 
 @dataclass
-class GetPostRequest:
-    id: uuid.UUID
+class GetPostRequest(BaseRequestClass):
+    pass
 
 
 @dataclass
-class LikePostRequest:
-    id: uuid.UUID
+class LikePostRequest(BaseRequestClass):
+    pass
 
 
 class UpdateImageRequest:

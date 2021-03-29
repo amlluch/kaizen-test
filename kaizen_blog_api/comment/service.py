@@ -7,7 +7,7 @@ from typing import Iterable, Protocol, runtime_checkable
 from kaizen_blog_api import ADMIN_EMAIL_ADDRESS
 from kaizen_blog_api.comment.entities import Comment
 from kaizen_blog_api.comment.repository import ICommentRepository
-from kaizen_blog_api.common import request_to_insert
+from kaizen_blog_api.common import BaseRequestClass, request_to_insert
 from kaizen_blog_api.events import CommentDeletedEvent, Event
 from kaizen_blog_api.validators import validate_and_get_dataclass
 
@@ -20,13 +20,13 @@ class CreateCommentRequest:
 
 
 @dataclass
-class GetCommentRequest:
-    id: uuid.UUID
+class GetCommentRequest(BaseRequestClass):
+    pass
 
 
 @dataclass
-class DeleteCommentRequest:
-    id: uuid.UUID
+class DeleteCommentRequest(BaseRequestClass):
+    pass
 
 
 @runtime_checkable

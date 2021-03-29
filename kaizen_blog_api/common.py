@@ -1,5 +1,5 @@
 import uuid
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from typing import Any, Dict, Type, TypeVar
 
 from boto3.dynamodb import conditions
@@ -9,6 +9,11 @@ from kaizen_blog_api.serializers import dict_factory
 from kaizen_blog_api.validators import validate_and_get_dataclass
 
 T = TypeVar("T")
+
+
+@dataclass
+class BaseRequestClass:
+    id: uuid.UUID
 
 
 def get_record(record_id: uuid.UUID, dataclass: Type[T], table: Any) -> T:
