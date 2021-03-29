@@ -97,6 +97,8 @@ For IP whitelisting, a resource policy as follows will be used:
     }
 }
 ```
+For lamda auth `IAM auth` will be used .
+
 ### Python code
 #### Setup
 1. Install dependencies:
