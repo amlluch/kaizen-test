@@ -1,5 +1,5 @@
 import uuid
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from io import BytesIO
 from typing import Any, Iterable, Optional, Protocol, runtime_checkable
 
@@ -12,12 +12,6 @@ from kaizen_blog_api.errors import AWSError, ImageError, RepositoryError
 from kaizen_blog_api.post.entities import Image, Post
 from kaizen_blog_api.serializers import dict_factory
 from kaizen_blog_api.validators import validate_and_get_dataclass
-
-
-@dataclass
-class CreatePostRequest:
-    text: str
-    username: str
 
 
 @runtime_checkable
