@@ -3,12 +3,9 @@ import uuid
 from base64 import b64encode
 from typing import Dict
 
-import boto3
 import pytest
-from moto import mock_s3
 
 from kaizen_blog_api.controller import create_post, like_comment, list_posts, read_post, update_image
-from kaizen_blog_api.post.repository import PostRepository
 from kaizen_blog_api.post.service import PostService
 
 
@@ -18,12 +15,9 @@ class TestPost:
         "body",
         [{"text": "blog text", "username": "user test"}],
     )
-    def test_create_post(self, body: Dict) -> None:
+    def test_create_post(self, body: Dict, post_service: PostService) -> None:
         # given
-        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-        posts_table = dynamodb.Table("posts")
-        repository = PostRepository(posts_table)  # type: ignore
-        service = PostService(repository)
+        service = post_service
 
         event = {"body": json.dumps(body)}
         # when
@@ -51,21 +45,17 @@ class TestPost:
         "body",
         [{"text": "blog text", "username": "user test"}],
     )
-    def test_read_post(self, body: Dict) -> None:
+    def test_read_post(self, body: Dict, post_service: PostService) -> None:
         # given
-        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-        posts_table = dynamodb.Table("posts")
-        repository = PostRepository(posts_table)  # type: ignore
-        service = PostService(repository)
         event: Dict = {"body": json.dumps(body)}
 
         # when
-        result = create_post(event, None, service)
+        result = create_post(event, None, post_service)
         body = json.loads(result["body"])
 
         # then
         event = {"pathParameters": {"id": body["id"]}}
-        response = read_post(event, None, service)
+        response = read_post(event, None, post_service)
 
         assert response["statusCode"] == 200
 
@@ -74,56 +64,36 @@ class TestPost:
         "body",
         [{"text": "blog text", "username": "user test"}],
     )
-    def test_read_post_not_existing_record(self, body: Dict) -> None:
-
-        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-        posts_table = dynamodb.Table("posts")
-        repository = PostRepository(posts_table)  # type: ignore
-        service = PostService(repository)
+    def test_read_post_not_existing_record(self, body: Dict, post_service: PostService) -> None:
 
         # given
         event = {"pathParameters": {"id": str(uuid.uuid4())}}
-        response = read_post(event, None, service)
+        response = read_post(event, None, post_service)
 
         # then
         assert response["statusCode"] == 404
 
     @pytest.mark.usefixtures("many_dummy_posts")
     @pytest.mark.usefixtures("dynamodb_tables_fixture")
-    def test_list_posts(self) -> None:
-        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-        posts_table = dynamodb.Table("posts")
-        repository = PostRepository(posts_table)  # type: ignore
-        service = PostService(repository)
+    def test_list_posts(self, post_service: PostService) -> None:
 
         # when
-        response = list_posts({}, None, service)
+        response = list_posts({}, None, post_service)
 
         # then
         body = json.loads(response["body"])
         assert body[0]["created_at"] > body[-1]["created_at"]
 
-    @mock_s3
     @pytest.mark.parametrize(
         "body",
         [{"text": "blog text", "username": "user test"}],
     )
     @pytest.mark.usefixtures("dynamodb_tables_fixture")
-    def test_upload_image(self, body: Dict, image_bytes: bytes) -> None:
+    def test_upload_image(self, body: Dict, image_bytes: bytes, post_service: PostService) -> None:
 
-        bucket_name = "testing"
-        s3_client = boto3.client("s3", region_name="us-east-1")
-        s3 = boto3.resource("s3", region_name="us-east-1")
-        s3.create_bucket(Bucket=bucket_name)
-
-        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-        posts_table = dynamodb.Table("posts")
-
-        repository = PostRepository(posts_table, bucket_name, s3_client)
-        service = PostService(repository)
         # given
         event = {"body": json.dumps(body)}
-        result = create_post(event, None, service)
+        result = create_post(event, None, post_service)
         post_id = json.loads(result["body"])["id"]
 
         # when
@@ -134,7 +104,7 @@ class TestPost:
                 "isBase64Encoded": True,
             },
             {},
-            service,
+            post_service,
         )
 
         # then
@@ -148,21 +118,19 @@ class TestPost:
         "body",
         [{"text": "blog text", "username": "user test"}],
     )
-    def test_like_comment(self, body: Dict) -> None:
+    def test_like_comment(self, body: Dict, post_service: PostService) -> None:
         # given
-        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-        posts_table = dynamodb.Table("posts")
-        repository = PostRepository(posts_table)  # type: ignore
-        service = PostService(repository)
-
         event: Dict = {"body": json.dumps(body)}
+
         # when
-        result = create_post(event, None, service)
+        result = create_post(event, None, post_service)
         body = json.loads(result["body"])
+
+        # then
         event = {"pathParameters": {"id": body["id"]}}
-        like_response = like_comment(event, None, service)
+        like_response = like_comment(event, None, post_service)
         assert like_response["statusCode"] == 200
-        response = read_post(event, None, service)
+        response = read_post(event, None, post_service)
         body = json.loads(response["body"])
         assert body["likes"] == 1
         assert response["statusCode"] == 200

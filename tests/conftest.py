@@ -4,10 +4,14 @@ from typing import Any
 
 import boto3
 import pytest
-from moto import mock_dynamodb2
+from moto import mock_dynamodb2, mock_s3, mock_ses, mock_sns
 
 from kaizen_blog_api.comment.entities import Comment
+from kaizen_blog_api.comment.repository import CommentRepository
+from kaizen_blog_api.comment.service import CommentService
 from kaizen_blog_api.post.entities import Image, Post
+from kaizen_blog_api.post.repository import PostRepository
+from kaizen_blog_api.post.service import PostService
 from kaizen_blog_api.serializers import dict_factory
 
 
@@ -106,3 +110,31 @@ def many_dummy_comments() -> None:
     for num in range(25):
         comment = Comment(id=uuid.uuid4(), text=f"Post number {num}", username=f"user {num}", post_id=uuid.uuid4())
         posts_table.put_item(Item=asdict(comment, dict_factory=dict_factory))
+
+
+@pytest.fixture()
+def post_service() -> PostService:
+
+    dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+    posts_table = dynamodb.Table("posts")
+    with mock_s3():
+        bucket_name = "testing"
+        s3_client = boto3.client("s3", region_name="us-east-1")
+        s3 = boto3.resource("s3", region_name="us-east-1")
+        s3.create_bucket(Bucket=bucket_name)
+    repository = PostRepository(posts_table, bucket_name, s3_client)
+    return PostService(repository)
+
+
+@pytest.fixture()
+def comment_service() -> CommentService:
+    dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
+    table = dynamodb.Table("comments")
+    with mock_sns():
+        sns = boto3.client("sns", region_name="eu-west-1")
+        sns.create_topic(Name="testing")
+    with mock_ses():
+        ses = boto3.client("ses", region_name="eu-west-1")
+        ses.verify_email_identity(EmailAddress="amlluch@gmail.com")
+    repository = CommentRepository(table, sns, ses_client=ses)
+    return CommentService(repository)

@@ -3,12 +3,9 @@ import uuid
 from dataclasses import asdict
 from typing import Dict
 
-import boto3
 import pytest
-from moto import mock_ses, mock_sns
 
 from kaizen_blog_api.comment.entities import Comment
-from kaizen_blog_api.comment.repository import CommentRepository
 from kaizen_blog_api.comment.service import CommentService
 from kaizen_blog_api.controller import admin_notify, create_comment, delete_comment, list_comments, read_comment
 from kaizen_blog_api.events import CommentDeletedEvent
@@ -20,44 +17,31 @@ class TestComment:
         "body",
         [{"text": "blog text", "username": "user test", "post_id": str(uuid.uuid4())}],
     )
-    def test_create_comment(self, body: Dict) -> None:
+    def test_create_comment(self, body: Dict, comment_service: CommentService) -> None:
         # given
-        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-        table = dynamodb.Table("comments")
-        repository = CommentRepository(table)  # type: ignore
-        service = CommentService(repository)
 
         event = {"body": json.dumps(body)}
         # when
-        result = create_comment(event, None, service)
+        result = create_comment(event, None, comment_service)
         assert result["statusCode"] == 200
 
-    @mock_sns
     @pytest.mark.usefixtures("dynamodb_tables_fixture")
     @pytest.mark.parametrize(
         "body",
         [{"text": "blog text", "username": "user test", "post_id": str(uuid.uuid4())}],
     )
-    def test_delete_comment(self, body: Dict) -> None:
-
-        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-        table = dynamodb.Table("comments")
-        sns = boto3.client("sns", region_name="eu-west-1")
-        sns.create_topic(Name="testing")
-        repository = CommentRepository(table, sns)  # type: ignore
-        service = CommentService(repository)
+    def test_delete_comment(self, body: Dict, comment_service: CommentService) -> None:
 
         event: Dict = {"body": json.dumps(body)}
         # given
-        result = create_comment(event, None, service)
+        result = create_comment(event, None, comment_service)
         body = json.loads(result["body"])
 
         # then
         event = {"pathParameters": {"id": str(body["id"])}}
-        response = delete_comment(event, None, service)
+        response = delete_comment(event, None, comment_service)
         assert response["statusCode"] == 204
 
-    @mock_ses
     @pytest.mark.parametrize(
         "body",
         [
@@ -68,46 +52,36 @@ class TestComment:
             )
         ],
     )
-    def test_notify_deleted_comment(self, body: Dict) -> None:
-        ses = boto3.client("ses", region_name="eu-west-1")
-        ses.verify_email_identity(EmailAddress="amlluch@gmail.com")
-        repository = CommentRepository(ses_client=ses)  # type: ignore
+    @pytest.mark.usefixtures("dynamodb_tables_fixture")
+    def test_notify_deleted_comment(self, body: Dict, comment_service: CommentService) -> None:
+
         event: Dict = {"Records": [{"Sns": {"Message": json.dumps(body)}}]}
-        service = CommentService(repository)
-        admin_notify(event, None, service)
+        admin_notify(event, None, comment_service)
 
     @pytest.mark.usefixtures("dynamodb_tables_fixture")
     @pytest.mark.parametrize(
         "body",
         [{"text": "blog text", "username": "user test", "post_id": str(uuid.uuid4())}],
     )
-    def test_read_comment(self, body: Dict) -> None:
-        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-        table = dynamodb.Table("comments")
-        repository = CommentRepository(table)  # type: ignore
-        service = CommentService(repository)
+    def test_read_comment(self, body: Dict, comment_service: CommentService) -> None:
 
         event: Dict = {"body": json.dumps(body)}
         # given
-        result = create_comment(event, None, service)
+        result = create_comment(event, None, comment_service)
         body = json.loads(result["body"])
 
         # then
         event = {"pathParameters": {"id": body["id"]}}
-        response = read_comment(event, None, service)
+        response = read_comment(event, None, comment_service)
         assert response["statusCode"] == 200
         ...
 
     @pytest.mark.usefixtures("many_dummy_comments")
     @pytest.mark.usefixtures("dynamodb_tables_fixture")
-    def test_list_posts(self) -> None:
-        dynamodb = boto3.resource("dynamodb", region_name="eu-west-1")
-        table = dynamodb.Table("comments")
-        repository = CommentRepository(table)  # type: ignore
-        service = CommentService(repository)
+    def test_list_posts(self, comment_service: CommentService) -> None:
 
         # when
-        response = list_comments({}, None, service)
+        response = list_comments({}, None, comment_service)
 
         # then
         body = json.loads(response["body"])
