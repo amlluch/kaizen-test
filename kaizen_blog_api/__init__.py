@@ -20,3 +20,4 @@ di["ses_client"] = boto3.client("ses", region_name=environ.get("AWS_REGION", "eu
 
 SNS_ARN = os.getenv("SNS_ARN", "arn:aws:sns:eu-west-1:123456789012:testing")
 ADMIN_EMAIL_ADDRESS = os.getenv("ADMIN_EMAIL_ADDRESS", "test@email.com")
+SENDER_EMAIL_ADDRESS = os.getenv("SENDER_EMAIL_ADDRESS", "amlluch@gmail.com")

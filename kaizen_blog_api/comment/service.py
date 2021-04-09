@@ -5,7 +5,7 @@ from typing import Iterable, Protocol, runtime_checkable
 
 from kink import inject
 
-from kaizen_blog_api import ADMIN_EMAIL_ADDRESS
+from kaizen_blog_api import ADMIN_EMAIL_ADDRESS, SENDER_EMAIL_ADDRESS
 from kaizen_blog_api.comment.entities import Comment
 from kaizen_blog_api.comment.repository import ICommentRepository
 from kaizen_blog_api.common import BaseRequestClass, request_to_insert
@@ -67,7 +67,7 @@ class CommentService(ICommentService):
     def notify(self, request: Event) -> None:
         payload = json.loads(request.payload)
         comment = validate_and_get_dataclass(payload, Comment)
-        self._repository.send_email(ADMIN_EMAIL_ADDRESS, comment)
+        self._repository.send_email(ADMIN_EMAIL_ADDRESS, comment, SENDER_EMAIL_ADDRESS)
 
     def read(self, request: GetCommentRequest) -> Comment:
         return self._repository.get(request.id)

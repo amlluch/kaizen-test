@@ -30,7 +30,7 @@ class ICommentRepository(Protocol):
     def delete(self, comment_id: uuid.UUID) -> None:
         ...
 
-    def send_email(self, recipient: str, comment: Comment) -> None:
+    def send_email(self, recipient: str, comment: Comment, sender: str) -> None:
         ...
 
     def list_by_date_reversed(self) -> Iterable[Comment]:
@@ -75,8 +75,7 @@ class CommentRepository(ICommentRepository):
         except ClientError as e:
             raise AWSError(f"AWS error {e.response['Error']['Code']} updating record {str(comment_id)}") from e
 
-    def send_email(self, recipient: str, comment: Comment, sender: str = None) -> None:
-        source = "amlluch@gmail.com" if sender is None else sender
+    def send_email(self, recipient: str, comment: Comment, sender: str) -> None:
         destination = {
             "ToAddresses": [
                 recipient,
@@ -111,6 +110,6 @@ class CommentRepository(ICommentRepository):
             },
         }
         try:
-            self.ses.send_email(Destination=destination, Message=message, Source=source)
+            self.ses.send_email(Destination=destination, Message=message, Source=sender)
         except ClientError as e:
             raise AWSError(f"AWS error {e.response['Error']['Code']} sending email to admin") from e
