@@ -1,8 +1,4 @@
-IAM Username: kaizen_user
 
-IAM Password: HocWDC1cfh3HMXc]3
-
-Login URL: https://608738265803.signin.aws.amazon.com/console
 
 # The Kaizen blog
 
